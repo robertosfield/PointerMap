@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <map>
 #include <string>
 
@@ -78,8 +80,38 @@ void mapPointers(std::istream& in, std::ostream& out)
 
 int main(int argc, char** argv)
 {
+    if (argc==1)
+    {
+        mapPointers(std::cin, std::cout);
+    }
+    else if (argc==2)
+    {
+        std::ifstream fin(argv[1]);
+        if (!fin)
+        {
+            std::cout<<"Warning: unable able to read file : "<<argv[1]<<std::endl;
+            return 0;
+        }
 
-    mapPointers(std::cin, std::cout);
+        std::stringstream stream_copy;
+        stream_copy << fin.rdbuf();
+
+        std::ofstream fout(argv[1]);
+        mapPointers(stream_copy, fout);
+    }
+    else if (argc==3)
+    {
+        std::ifstream fin(argv[1]);
+        if (!fin)
+        {
+            std::cout<<"Warning: unable able to read file : "<<argv[1]<<std::endl;
+            return 0;
+        }
+
+        std::ofstream fout(argv[2]);
+
+        mapPointers(fin, fout);
+    }
 
     return 1;
 }
