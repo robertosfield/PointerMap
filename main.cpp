@@ -6,7 +6,6 @@ void mapPointers(std::istream& in, std::ostream& out)
 {
     std::map<std::string, size_t> pointerMap;
     // make sure the null pointer always maps to pointer_0
-    pointerMap["0x0"] = 0;
 
     std::string current_pointer_string;
     char previous_char = 0;
@@ -32,18 +31,26 @@ void mapPointers(std::istream& in, std::ostream& out)
             }
             else
             {
-                size_t pointer_number = pointerMap.size();
-                if (auto itr = pointerMap.find(current_pointer_string); itr != pointerMap.end())
+                parsing_pointer = false;
+
+                if (current_pointer_string=="0")
                 {
-                    pointer_number = itr->second;
+                    out<<"NULL";
                 }
                 else
                 {
-                    pointerMap[current_pointer_string] = pointer_number;
-                }
-                parsing_pointer = false;
+                    size_t pointer_number = pointerMap.size();
+                    if (auto itr = pointerMap.find(current_pointer_string); itr != pointerMap.end())
+                    {
+                        pointer_number = itr->second;
+                    }
+                    else
+                    {
+                        pointerMap[current_pointer_string] = pointer_number;
+                    }
 
-                out<<"pointer_"<<pointer_number<<current_char;
+                    out<<"pointer_"<<pointer_number<<current_char;
+                }
             }
         }
         else if (previous_char=='0' && current_char=='x')
