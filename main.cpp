@@ -15,7 +15,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <map>
 #include <string>
 
-void mapPointers(std::istream& in, std::ostream& out)
+void mapPointers(std::istream& in, std::ostream& out, bool map_to_numbers)
 {
     std::map<std::string, size_t> pointerMap;
     // make sure the null pointer always maps to pointer_0
@@ -48,9 +48,9 @@ void mapPointers(std::istream& in, std::ostream& out)
 
                 if (current_pointer_string=="0")
                 {
-                    out<<"NULL";
+                    out<<"NULL"<<current_char;
                 }
-                else
+                else if (map_to_numbers)
                 {
                     size_t pointer_number = pointerMap.size();
                     if (auto itr = pointerMap.find(current_pointer_string); itr != pointerMap.end())
@@ -64,12 +64,24 @@ void mapPointers(std::istream& in, std::ostream& out)
 
                     out<<"pointer_"<<pointer_number<<current_char;
                 }
+                else
+                {
+                    out<<"pointer"<<current_char;
+                }
             }
         }
-        else if (previous_char=='0' && current_char=='x')
+        else if (previous_char=='0')
         {
-            parsing_pointer = true;
-            current_pointer_string = "";
+            if (current_char=='x')
+            {
+                parsing_pointer = true;
+                current_pointer_string = "";
+            }
+            else
+            {
+                out.put(previous_char);
+                if (current_char!='0') out.put(current_char);
+            }
         }
         else if (current_char!='0')
         {
@@ -91,11 +103,39 @@ void mapPointers(std::istream& in, std::ostream& out)
 
 int main(int argc, char** argv)
 {
-    if (argc==1)
+    const char* input_filename = nullptr;
+    const char* output_filename = nullptr;
+    bool map_to_numbers = false;
+    bool help = false;
+
+    for(int i = 1; i<argc; ++i)
     {
-        mapPointers(std::cin, std::cout);
+        if (std::string("-n") == argv[i]) map_to_numbers = true;
+        else if (std::string("-h") == argv[i]) help = true;
+        else
+        {
+            if (input_filename) output_filename = argv[i];
+            else input_filename = argv[i];
+        }
     }
-    else if (argc==2)
+
+    if (help)
+    {
+        std::cout<<"Command line usage:"<<std::endl;
+        std::cout<<argv[0]<<" [-h]                                 // Print help."<<std::endl;
+        std::cout<<argv[0]<<" [-n]                                 // Enable mapping to pointer_number, otherwise pointers map to pointer."<<std::endl;
+        std::cout<<argv[0]<<" [-n] < input > output                // Read stdin, remap pointers and write to stdout."<<std::endl;
+        std::cout<<argv[0]<<" [-n] filename                        // In place replacement of all pointers."<<std::endl;
+        std::cout<<argv[0]<<" [-n] input_filename output_filename  // Read input_filename, remap pointers and write to output_filename."<<std::endl;
+        std::cout<<"vsgdraw -d -a | "<<argv[0]<<" > output             // Run Vulkan graphics application redirecting console output through pointermap"<<std::endl;
+        return 1;
+    }
+
+    if (!input_filename)
+    {
+        mapPointers(std::cin, std::cout, map_to_numbers);
+    }
+    else if (!output_filename)
     {
         std::ifstream fin(argv[1]);
         if (!fin)
@@ -108,20 +148,20 @@ int main(int argc, char** argv)
         stream_copy << fin.rdbuf();
 
         std::ofstream fout(argv[1]);
-        mapPointers(stream_copy, fout);
+        mapPointers(stream_copy, fout, map_to_numbers);
     }
-    else if (argc==3)
+    else
     {
-        std::ifstream fin(argv[1]);
+        std::ifstream fin(input_filename);
         if (!fin)
         {
             std::cout<<"Warning: unable able to read file : "<<argv[1]<<std::endl;
             return 0;
         }
 
-        std::ofstream fout(argv[2]);
+        std::ofstream fout(output_filename);
 
-        mapPointers(fin, fout);
+        mapPointers(fin, fout, map_to_numbers);
     }
 
     return 1;
